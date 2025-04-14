@@ -2,7 +2,13 @@ import DraggableOption from "@/components/DraggableOption";
 import DroppableBlank from "@/components/DroppableBlank";
 import DroppableOptionsContainer from "@/components/DroppableOptionsContainer";
 import { Question } from "@/lib/types";
-import { DndContext, pointerWithin } from "@dnd-kit/core";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverEvent,
+  DragStartEvent,
+  pointerWithin,
+} from "@dnd-kit/core";
 import { ArrowRight } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -37,14 +43,113 @@ export default function QuestionScreen({
     setSelectedAnswers({});
     setTimeLeft(timeLeft);
     setAvailableOptions([...question.options]);
-  }, [question, timeLimit]);
+  }, [question, timeLimit]); // reset on question change
 
-  const handleDragStart = () => {};
-  const handleDragOver = () => {};
-  const handleDragEnd = () => {};
+  useEffect(() => {
+    if (timeLeft <= 0) {
+      handleNext();
+      return;
+    }
 
-  const handleSelectWord = (word: string, blank: string) => {};
-  const handleRemoveWord = (blank: string) => {};
+    const timer = setTimeout(() => {
+      setTimeLeft(timeLeft - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [timeLeft]);
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    console.log("drag start:", active.id);
+    setActiveId(String(active.id));
+  };
+  const handleDragOver = (event: DragOverEvent) => {
+    const { over } = event;
+
+    if (!over) {
+      setOverBlankId(null);
+      return;
+    }
+
+    const overId = String(over.id);
+
+    if (overId.startsWith("blank-")) {
+      const blankId = overId.replace("blank-", "");
+      setOverBlankId(blankId);
+    } else {
+      setOverBlankId(null);
+    }
+  };
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+    setOverBlankId(null);
+
+    if (!active || !over) return;
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    console.log("drag ended:", activeId, "over:", overId);
+
+    if (activeId.startsWith("option-") && overId.startsWith("blank-")) {
+      // options to blanks
+      const word = activeId.replace("option-", "");
+      const blank = overId.replace("blank-", "");
+      handleSelectWord(word, blank);
+    } else if (
+      activeId.startsWith("blank-") &&
+      overId === "options-container"
+    ) {
+      // blanks to options back
+      const blank = activeId.replace("blank-", "");
+      handleRemoveWord(blank);
+    } else if (activeId.startsWith("blank-") && overId.startsWith("blank-")) {
+      // dragging between blanks to swap
+      const sourceBlank = activeId.replace("blank-", "");
+      const targetBlank = overId.replace("blank-", "");
+
+      if (selectedAnswers[sourceBlank] && sourceBlank !== targetBlank) {
+        const word = selectedAnswers[sourceBlank];
+
+        setSelectedAnswers((prev) => {
+          const newAnswers = { ...prev };
+
+          if (newAnswers[targetBlank]) {
+            newAnswers[sourceBlank] = newAnswers[targetBlank];
+          } else {
+            delete newAnswers[sourceBlank];
+          }
+
+          newAnswers[targetBlank] = word;
+          return newAnswers;
+        });
+      }
+    }
+  };
+
+  const handleSelectWord = (word: string, blank: string) => {
+    if (selectedAnswers[blank]) {
+      setAvailableOptions((prev) => [...prev, selectedAnswers[blank]]);
+    }
+
+    setSelectedAnswers((prev) => ({
+      ...prev,
+      [blank]: word,
+    }));
+
+    setAvailableOptions((prev) => prev.filter((option) => option !== word));
+  };
+  const handleRemoveWord = (blank: string) => {
+    if (!selectedAnswers[blank]) return;
+
+    setAvailableOptions((prev) => [...prev, selectedAnswers[blank]]);
+    setSelectedAnswers((prev) => {
+      const newAnswers = { ...prev };
+      delete newAnswers[blank];
+      return newAnswers;
+    });
+  };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -109,7 +214,7 @@ export default function QuestionScreen({
 
   return (
     <div className="min-h-screen bg-white flex flex-col px-40 py-20">
-      <div className="flex flex-col shadow-3xl/10 rounded-3xl">
+      <main className="flex-1 flex flex-col shadow-2xl/20 rounded-3xl p-5">
         <DndContext
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
@@ -140,7 +245,7 @@ export default function QuestionScreen({
             ))}
           </div>
 
-          <main className="flex-1 max-w-3xl mx-auto px-4 py-8 flex flex-col">
+          <div className="flex-1 max-w-3xl mx-auto px-4 py-8 flex flex-col justify-center items-center ">
             <h2 className="text-xl text-center text-gray-600 mb-12">
               Select the missing words in the correct order
             </h2>
@@ -167,19 +272,22 @@ export default function QuestionScreen({
                 );
               })}
             </DroppableOptionsContainer>
-
-            <div className="flex justify-end">
-              <button
-                onClick={handleNext}
-                disabled={!allBlanksFilled}
-                className={`p-3 rounded-lg`}
-              >
-                <ArrowRight className="w-5 h-5" />
-              </button>
-            </div>
-          </main>
+          </div>
+          <div className="flex justify-end">
+            <button
+              onClick={handleNext}
+              disabled={!allBlanksFilled}
+              className={`p-3 m-3 rounded-lg ${
+                allBlanksFilled
+                  ? "bg-indigo-600 text-white hover:bg-indigo-600/90"
+                  : "border border-gray-100 text-gray-300 hover:bg-gray-100"
+              }`}
+            >
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          </div>
         </DndContext>
-      </div>
+      </main>
     </div>
   );
 }
