@@ -118,10 +118,46 @@ export default function App() {
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([]);
   const [score, setScore] = useState(0);
 
-  const handleStartQuiz = () => {};
-  const handleNextQuestion = (answers: Record<string, string>) => {};
-  const handleQuit = () => {};
-  const handleGoToDashboard = () => {};
+  const handleStartQuiz = () => {
+    setCurrentScreen("question");
+    // reset
+    setCurrentQuestionIndex(0);
+    setUserAnswers([]);
+    setScore(0);
+  };
+  const handleNextQuestion = (answers: Record<string, string>) => {
+    const question = questions[currentQuestionIndex];
+
+    // all blanks are matching answers, then passed
+    const isCorrect = Object.entries(answers).every(
+      ([blank, answer]) => answer === question.correctAnswers[blank]
+    );
+
+    setUserAnswers([
+      ...userAnswers,
+      {
+        questionId: question.id,
+        answers,
+        isCorrect,
+      },
+    ]);
+
+    if (isCorrect) {
+      setScore((prevScore) => prevScore + 1);
+    }
+
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
+    } else {
+      setCurrentScreen("results");
+    }
+  };
+  const handleQuit = () => {
+    setCurrentScreen("start");
+  };
+  const handleGoToDashboard = () => {
+    setCurrentScreen("start");
+  };
 
   return (
     <div>

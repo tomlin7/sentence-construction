@@ -130,3 +130,13 @@
     @apply bg-background text-foreground;
   }
 }
+
+
+@layer components {
+  .pbutton {
+    @apply border border-indigo-700 rounded-lg text-indigo-700 font-medium hover:bg-gray-100 transition-colors
+  }
+  .pbutton-filled {
+    @apply border bg-indigo-700 rounded-lg text-white font-medium hover:bg-indigo-700/90 transition-colors
+  }
+}
