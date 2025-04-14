@@ -17,7 +17,7 @@ export default function DraggableOption({
 
   const style = transform
     ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0) rotate(-3deg)`,
         zIndex: isDragging ? 1000 : 1,
       }
     : undefined;
@@ -28,7 +28,9 @@ export default function DraggableOption({
       style={style}
       {...listeners}
       {...attributes}
-      className={`inline-block px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-100`}
+      className={`inline-block px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-100
+        ${isDragging ? "shadow-lg opacity-90" : "hover:shadow-md/5"}
+        cursor-grab active:cursor-grabbing transition-all duration-75`}
     >
       {option}
     </div>

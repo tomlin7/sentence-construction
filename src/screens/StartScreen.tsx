@@ -1,5 +1,5 @@
 import { Separator } from "@/components/ui/separator";
-import { Edit, EditIcon, MoreHorizontal } from "lucide-react";
+import { EditIcon, MoreHorizontal } from "lucide-react";
 
 interface StartScreenProps {
   onStart: () => void;

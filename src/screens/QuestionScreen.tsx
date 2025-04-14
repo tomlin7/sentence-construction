@@ -41,7 +41,7 @@ export default function QuestionScreen({
 
   useEffect(() => {
     setSelectedAnswers({});
-    setTimeLeft(timeLeft);
+    setTimeLeft(timeLimit);
     setAvailableOptions([...question.options]);
   }, [question, timeLimit]); // reset on question change
 
