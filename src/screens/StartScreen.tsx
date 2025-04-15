@@ -3,9 +3,15 @@ import { EditIcon, MoreHorizontal } from "lucide-react";
 
 interface StartScreenProps {
   onStart: () => void;
+  coins: number;
+  totalQuestions: number;
 }
 
-export default function StartScreen({ onStart }: StartScreenProps) {
+export default function StartScreen({
+  onStart,
+  coins,
+  totalQuestions,
+}: StartScreenProps) {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <nav className="flex justify-end p-4 shadow-lg/4">
@@ -20,7 +26,7 @@ export default function StartScreen({ onStart }: StartScreenProps) {
       <div className="fixed inset-0 flex items-center justify-center pointer-events-none">
         <main className="max-w-2xl w-full px-4 flex flex-col items-center justify-center pointer-events-auto">
           <div className="flex justify-center mb-6">
-            <EditIcon className="w-6 h-6 text-gray-400" />
+            <EditIcon className="w-10 h-10 text-gray-400" />
           </div>
 
           <h2 className="text-3xl font-bold text-center text-[#0f1010] mb-4">
@@ -44,14 +50,14 @@ export default function StartScreen({ onStart }: StartScreenProps) {
               <p className="text-gray-800 font-medium mb-2 whitespace-nowrap">
                 Total Questions
               </p>
-              <p className="text-gray-500">10</p>
+              <p className="text-gray-500">{totalQuestions}</p>
             </div>
             <Separator orientation="vertical" />
             <div className="flex flex-col items-center w-1/3">
               <p className="text-gray-800 font-medium mb-2">Coins</p>
               <div className="flex items-center gap-1">
                 <div className="w-4 h-4 rounded-full bg-amber-300"></div>
-                <p className="text-gray-500">0</p>
+                <p className="text-gray-500">{coins || 0}</p>
               </div>
             </div>
           </div>

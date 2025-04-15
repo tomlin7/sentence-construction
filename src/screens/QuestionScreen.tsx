@@ -1,7 +1,7 @@
 import DraggableOption from "@/components/DraggableOption";
 import DroppableBlank from "@/components/DroppableBlank";
 import DroppableOptionsContainer from "@/components/DroppableOptionsContainer";
-import { Question } from "@/lib/types";
+import { Question } from "@/types";
 import {
   DndContext,
   DragEndEvent,
@@ -16,7 +16,7 @@ interface QuestionScreenProps {
   question: Question;
   questionNumber: number;
   totalQuestions: number;
-  onNext: (answers: Record<string, string>) => void;
+  onNext: (answers: string[]) => void;
   onQuit: () => void;
   timeLimit: number;
 }
@@ -29,9 +29,7 @@ export default function QuestionScreen({
   onQuit,
   timeLimit,
 }: QuestionScreenProps) {
-  const [selectedAnswers, setSelectedAnswers] = useState<
-    Record<string, string>
-  >({});
+  const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
   const [timeLeft, setTimeLeft] = useState(timeLimit);
   const [availableOptions, setAvailableOptions] = useState<string[]>([
     ...question.options,
@@ -40,7 +38,7 @@ export default function QuestionScreen({
   const [overBlankId, setOverBlankId] = useState<string | null>(null);
 
   useEffect(() => {
-    setSelectedAnswers({});
+    setSelectedAnswers([]);
     setTimeLeft(timeLimit);
     setAvailableOptions([...question.options]);
   }, [question, timeLimit]); // reset on question change
@@ -60,9 +58,9 @@ export default function QuestionScreen({
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
-    console.log("drag start:", active.id);
     setActiveId(String(active.id));
   };
+
   const handleDragOver = (event: DragOverEvent) => {
     const { over } = event;
 
@@ -80,6 +78,7 @@ export default function QuestionScreen({
       setOverBlankId(null);
     }
   };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
@@ -90,65 +89,60 @@ export default function QuestionScreen({
     const activeId = String(active.id);
     const overId = String(over.id);
 
-    console.log("drag ended:", activeId, "over:", overId);
-
     if (activeId.startsWith("option-") && overId.startsWith("blank-")) {
       // options to blanks
       const word = activeId.replace("option-", "");
-      const blank = overId.replace("blank-", "");
-      handleSelectWord(word, blank);
+      const position = parseInt(overId.replace("blank-", ""));
+      handleSelectWord(word, position);
     } else if (
       activeId.startsWith("blank-") &&
       overId === "options-container"
     ) {
       // blanks to options back
-      const blank = activeId.replace("blank-", "");
-      handleRemoveWord(blank);
+      const position = parseInt(activeId.replace("blank-", ""));
+      handleRemoveWord(position);
     } else if (activeId.startsWith("blank-") && overId.startsWith("blank-")) {
       // dragging between blanks to swap
-      const sourceBlank = activeId.replace("blank-", "");
-      const targetBlank = overId.replace("blank-", "");
+      const sourcePosition = parseInt(activeId.replace("blank-", ""));
+      const targetPosition = parseInt(overId.replace("blank-", ""));
 
-      if (selectedAnswers[sourceBlank] && sourceBlank !== targetBlank) {
-        const word = selectedAnswers[sourceBlank];
+      if (
+        selectedAnswers[sourcePosition] &&
+        sourcePosition !== targetPosition
+      ) {
+        const word = selectedAnswers[sourcePosition];
+        const newAnswers = [...selectedAnswers];
 
-        setSelectedAnswers((prev) => {
-          const newAnswers = { ...prev };
+        if (newAnswers[targetPosition]) {
+          newAnswers[sourcePosition] = newAnswers[targetPosition];
+        } else {
+          delete newAnswers[sourcePosition];
+        }
 
-          if (newAnswers[targetBlank]) {
-            newAnswers[sourceBlank] = newAnswers[targetBlank];
-          } else {
-            delete newAnswers[sourceBlank];
-          }
-
-          newAnswers[targetBlank] = word;
-          return newAnswers;
-        });
+        newAnswers[targetPosition] = word;
+        setSelectedAnswers(newAnswers);
       }
     }
   };
 
-  const handleSelectWord = (word: string, blank: string) => {
-    if (selectedAnswers[blank]) {
-      setAvailableOptions((prev) => [...prev, selectedAnswers[blank]]);
+  const handleSelectWord = (word: string, position: number) => {
+    if (selectedAnswers[position]) {
+      setAvailableOptions((prev) => [...prev, selectedAnswers[position]]);
     }
 
-    setSelectedAnswers((prev) => ({
-      ...prev,
-      [blank]: word,
-    }));
-
+    const newAnswers = [...selectedAnswers];
+    newAnswers[position] = word;
+    setSelectedAnswers(newAnswers);
     setAvailableOptions((prev) => prev.filter((option) => option !== word));
   };
-  const handleRemoveWord = (blank: string) => {
-    if (!selectedAnswers[blank]) return;
 
-    setAvailableOptions((prev) => [...prev, selectedAnswers[blank]]);
-    setSelectedAnswers((prev) => {
-      const newAnswers = { ...prev };
-      delete newAnswers[blank];
-      return newAnswers;
-    });
+  const handleRemoveWord = (position: number) => {
+    if (!selectedAnswers[position]) return;
+
+    setAvailableOptions((prev) => [...prev, selectedAnswers[position]]);
+    const newAnswers = [...selectedAnswers];
+    delete newAnswers[position];
+    setSelectedAnswers(newAnswers);
   };
 
   const formatTime = (seconds: number) => {
@@ -157,18 +151,25 @@ export default function QuestionScreen({
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
-  const allBlanksFilled = question.blanks.every(
-    (blank) => selectedAnswers[blank]
-  );
+  const getBlanks = () => {
+    return question.question.split("_____________").length - 1;
+  };
+
+  const allBlanksFilled =
+    selectedAnswers.length === getBlanks() &&
+    selectedAnswers.every((answer) => answer !== undefined);
 
   const handleNext = useCallback(() => {
     if (!allBlanksFilled) {
-      const newAnswers = { ...selectedAnswers };
-      const emptyBlanks = question.blanks.filter((blank) => !newAnswers[blank]);
+      const newAnswers = [...selectedAnswers];
+      const emptyPositions = Array.from(
+        { length: getBlanks() },
+        (_, i) => i
+      ).filter((i) => !newAnswers[i]);
 
-      emptyBlanks.forEach((blank, index) => {
+      emptyPositions.forEach((position, index) => {
         if (index < availableOptions.length) {
-          newAnswers[blank] = availableOptions[index];
+          newAnswers[position] = availableOptions[index];
         }
       });
 
@@ -176,39 +177,32 @@ export default function QuestionScreen({
     } else {
       onNext(selectedAnswers);
     }
-  }, [
-    selectedAnswers,
-    question.blanks,
-    availableOptions,
-    allBlanksFilled,
-    onNext,
-  ]);
+  }, [selectedAnswers, availableOptions, allBlanksFilled, onNext]);
 
   const renderQuestionText = () => {
-    const parts = question.text.split(/(\[blank\d+\])/g);
+    const parts = question.question.split("_____________");
 
     return parts.map((part, index) => {
-      const blankMatch = part.match(/\[blank(\d+)\]/);
+      if (index === parts.length - 1) {
+        return <span key={index}>{part}</span>;
+      }
 
-      if (blankMatch) {
-        const blankId = `blank${blankMatch[1]}`;
-        const selectedWord = selectedAnswers[blankId];
-        const droppableId = `blank-${blankId}`;
-        const isOver = overBlankId === blankId;
+      const droppableId = `blank-${index}`;
+      const selectedWord = selectedAnswers[index];
+      const isOver = overBlankId === String(index);
 
-        return (
+      return (
+        <span key={index}>
+          {part}
           <DroppableBlank
-            key={index}
             id={droppableId}
-            blank={blankId}
+            blank={String(index)}
             selectedWord={selectedWord}
             onRemove={handleRemoveWord}
             isOver={isOver}
           />
-        );
-      }
-
-      return <span key={index}>{part}</span>;
+        </span>
+      );
     });
   };
 
@@ -233,7 +227,6 @@ export default function QuestionScreen({
             </button>
           </header>
 
-          {/* progress */}
           <div className="flex px-4 mb-8">
             {Array.from({ length: totalQuestions }).map((_, index) => (
               <div
@@ -245,7 +238,7 @@ export default function QuestionScreen({
             ))}
           </div>
 
-          <div className="flex-1 max-w-3xl mx-auto px-4 py-8 flex flex-col justify-center items-center ">
+          <div className="flex-1 max-w-3xl mx-auto px-4 py-8 flex flex-col justify-center items-center">
             <h2 className="text-xl text-center text-gray-600 mb-12">
               Select the missing words in the correct order
             </h2>
@@ -273,6 +266,7 @@ export default function QuestionScreen({
               })}
             </DroppableOptionsContainer>
           </div>
+
           <div className="flex justify-end">
             <button
               onClick={handleNext}

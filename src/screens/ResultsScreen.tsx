@@ -1,6 +1,11 @@
-import { Question, UserAnswer } from "@/lib/types";
+import { Question } from "@/types";
 import { ArrowLeft, ChevronDown, MoreHorizontal } from "lucide-react";
-import { useState } from "react";
+
+interface UserAnswer {
+  questionId: string;
+  answers: string[];
+  isCorrect: boolean;
+}
 
 interface ResultsScreenProps {
   userAnswers: UserAnswer[];
@@ -92,35 +97,31 @@ export default function ResultsScreen({
             onClick={() => {}}
             className="flex items-center justify-center w-8 h-8 m-4 animate-bounce"
           >
-            <ChevronDown
-              className={`
-                w-10 h-10 text-gray-600 
-                `}
-            />
+            <ChevronDown className="w-10 h-10 text-gray-600" />
           </button>
         </div>
 
         <div className="w-full space-y-20">
           {userAnswers.map((userAnswer, index) => {
             const question = questions.find(
-              (q) => q.id === userAnswer.questionId
+              (q) => q.questionId === userAnswer.questionId
             )!;
 
-            const userSentence = question.text.replace(
-              /\[blank(\d+)\]/g,
-              (_, num) => {
-                const blankId = `blank${num}`;
-                return userAnswer.answers[blankId] || "_____";
-              }
-            );
+            const userSentence = question.question
+              .split("_____________")
+              .reduce((sentence, part, idx, arr) => {
+                if (idx === arr.length - 1) return sentence + part;
+                return sentence + part + (userAnswer.answers[idx] || "_____");
+              }, "");
 
-            const correctSentence = question.text.replace(
-              /\[blank(\d+)\]/g,
-              (_, num) => {
-                const blankId = `blank${num}`;
-                return question.correctAnswers[blankId] || "_____";
-              }
-            );
+            const correctSentence = question.question
+              .split("_____________")
+              .reduce((sentence, part, idx, arr) => {
+                if (idx === arr.length - 1) return sentence + part;
+                return (
+                  sentence + part + (question.correctAnswer[idx] || "_____")
+                );
+              }, "");
 
             return (
               <div
