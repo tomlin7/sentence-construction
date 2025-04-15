@@ -94,18 +94,18 @@ export default function App() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        Loading...
+        <div className="animate-ping h-12 w-12 border-2 rounded-full border-indigo-500"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-gray-700 text-xl">
+      <div className="min-h-screen flex flex-col items-center justify-center text-gray-700 text-xl p-4">
         {error}
-        <div className="flex flex-col gap-5 text-gray-700">
+        <div className="flex flex-col gap-5 text-gray-700 mt-4">
           Make sure the json-server is running:
-          <code className="flex items-center justify-center bg-gray-700 text-gray-100 p-5 rounded-md border-4 border-black">
+          <code className="flex items-center justify-center bg-gray-700 text-gray-100 p-5 rounded-md border-4 border-black overflow-x-auto w-full md:w-auto">
             $ bun run server
           </code>
         </div>

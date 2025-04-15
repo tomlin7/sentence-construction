@@ -3,11 +3,11 @@ import DroppableBlank from "@/components/DroppableBlank";
 import DroppableOptionsContainer from "@/components/DroppableOptionsContainer";
 import { Question } from "@/types";
 import {
+  closestCenter,
   DndContext,
   DragEndEvent,
   DragOverEvent,
   DragStartEvent,
-  pointerWithin,
 } from "@dnd-kit/core";
 import { ArrowRight } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -206,28 +206,43 @@ export default function QuestionScreen({
     });
   };
 
+  // Function to handle tapping an option on mobile
+  const handleOptionTap = (option: string) => {
+    if (!activeId) {
+      // Find the first empty position
+      const emptyPosition = Array.from(
+        { length: getBlanks() },
+        (_, i) => i
+      ).find((i) => !selectedAnswers[i]);
+
+      if (emptyPosition !== undefined) {
+        handleSelectWord(option, emptyPosition);
+      }
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-white flex flex-col px-40 py-20">
-      <main className="flex-1 flex flex-col shadow-2xl/20 rounded-3xl p-5">
+    <div className="min-h-screen bg-white flex flex-col px-4 md:px-8 lg:px-40 py-6 md:py-10 lg:py-20">
+      <main className="flex-1 flex flex-col shadow-xl rounded-2xl p-3 md:p-5">
         <DndContext
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
-          collisionDetection={pointerWithin}
+          collisionDetection={closestCenter}
         >
-          <header className="p-4 flex justify-between items-center">
-            <div className="text-2xl font-bold text-black">
+          <header className="p-2 md:p-4 flex justify-between items-center">
+            <div className="text-xl md:text-2xl font-bold text-black">
               {formatTime(timeLeft)}
             </div>
             <button
               onClick={onQuit}
-              className="px-4 py-2 border border-gray-100 rounded-lg text-gray-700 hover:bg-gray-200"
+              className="px-3 py-1 md:px-4 md:py-2 border border-gray-100 rounded-lg text-gray-700 hover:bg-gray-200"
             >
               Quit
             </button>
           </header>
 
-          <div className="flex px-4 mb-8">
+          <div className="flex px-2 md:px-4 mb-4 md:mb-8">
             {Array.from({ length: totalQuestions }).map((_, index) => (
               <div
                 key={index}
@@ -238,46 +253,53 @@ export default function QuestionScreen({
             ))}
           </div>
 
-          <div className="flex-1 max-w-3xl mx-auto px-4 py-8 flex flex-col justify-center items-center">
-            <h2 className="text-xl text-center text-gray-600 mb-12">
+          <div className="flex-1 max-w-3xl mx-auto px-2 md:px-4 py-4 md:py-8 flex flex-col justify-center items-center">
+            <h2 className="text-lg md:text-xl text-center text-gray-600 mb-6 md:mb-12">
               Select the missing words in the correct order
             </h2>
 
-            <div className="text-lg mb-12 leading-relaxed">
+            <div className="text-base md:text-lg mb-6 md:mb-12 leading-relaxed text-center">
               {renderQuestionText()}
             </div>
 
-            <DroppableOptionsContainer
-              id="options-container"
-              isActive={activeId?.startsWith("blank-") || false}
-            >
-              {availableOptions.map((option) => {
-                const optionId = `option-${option}`;
-                const isActive = activeId === optionId;
+            <div className="w-full md:w-auto">
+              <DroppableOptionsContainer
+                id="options-container"
+                isActive={activeId?.startsWith("blank-") || false}
+              >
+                {availableOptions.map((option) => {
+                  const optionId = `option-${option}`;
+                  const isActive = activeId === optionId;
 
-                return (
-                  <DraggableOption
-                    key={optionId}
-                    id={optionId}
-                    option={option}
-                    isDragging={isActive}
-                  />
-                );
-              })}
-            </DroppableOptionsContainer>
+                  return (
+                    <div
+                      key={optionId}
+                      onClick={() => handleOptionTap(option)}
+                      className="touch-manipulation"
+                    >
+                      <DraggableOption
+                        id={optionId}
+                        option={option}
+                        isDragging={isActive}
+                      />
+                    </div>
+                  );
+                })}
+              </DroppableOptionsContainer>
+            </div>
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex justify-end p-2">
             <button
               onClick={handleNext}
               disabled={!allBlanksFilled}
-              className={`p-3 m-3 rounded-lg ${
+              className={`p-2 md:p-3 m-2 md:m-3 rounded-lg ${
                 allBlanksFilled
                   ? "bg-indigo-600 text-white hover:bg-indigo-600/90"
                   : "border border-gray-100 text-gray-300 hover:bg-gray-100"
               }`}
             >
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
             </button>
           </div>
         </DndContext>

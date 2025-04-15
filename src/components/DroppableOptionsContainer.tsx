@@ -18,11 +18,11 @@ export default function DroppableOptionsContainer({
   return (
     <div
       ref={setNodeRef}
-      className={`flex flex-wrap gap-2 h-16 justify-center mb-12 p-2 rounded-lg ${
+      className={`flex flex-wrap gap-2 min-h-16 justify-center mb-6 md:mb-12 p-2 rounded-lg w-full ${
         isActive || isOver
           ? "bg-gray-100 border border-indigo-500"
-          : "border border-transparent "
-      } `}
+          : "border border-transparent"
+      }`}
     >
       {children}
     </div>
